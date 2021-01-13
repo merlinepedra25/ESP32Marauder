@@ -8,6 +8,7 @@
 #include "BatteryInterface.h"
 #include "SDInterface.h"
 #include "Web.h"
+#include "keyboard_interface.h"
 
 
 extern Display display_obj;
@@ -15,6 +16,7 @@ extern WiFiScan wifi_scan_obj;
 extern Web web_obj;
 extern SDInterface sd_obj;
 extern BatteryInterface battery_obj;
+extern KeyboardInterface keyboard_obj;
 
 // Keypad start position, key sizes and spacing
 #define KEY_X 120 // Centre of key
@@ -101,7 +103,7 @@ struct Menu {
   String name;
   LinkedList<MenuNode>* list;
   Menu                * parentMenu;
-  //uint8_t               selected;
+  uint8_t               selected = 0;
 };
 
 
@@ -161,6 +163,8 @@ class MenuFunctions
     void battery2(bool initial = false);
     void showMenuList(Menu* menu, int layer);
     void orientDisplay();
+    void buttonSelected(uint8_t b);
+    void buttonNotSelected(uint8_t b);
 
   public:
     MenuFunctions();

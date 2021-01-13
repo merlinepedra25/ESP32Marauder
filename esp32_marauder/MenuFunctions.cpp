@@ -263,6 +263,31 @@ void ta_event_cb(lv_obj_t * ta, lv_event_t event)
   //  }
   //}
 }
+void MenuFunctions::buttonSelected(uint8_t b) {
+  display_obj.tft.setFreeFont(MENU_FONT);
+  display_obj.key[b].drawButton(true, current_menu->list->get(b).name);
+  if (current_menu->list->get(b).name != "Back")
+    display_obj.tft.drawXBitmap(0,
+                                KEY_Y + b * (KEY_H + KEY_SPACING_Y) - (ICON_H / 2),
+                                menu_icons[current_menu->list->get(b).icon],
+                                ICON_W,
+                                ICON_H,
+                                current_menu->list->get(b).color,
+                                TFT_BLACK);
+}
+
+void MenuFunctions::buttonNotSelected(uint8_t b) {
+  display_obj.tft.setFreeFont(MENU_FONT);
+  display_obj.key[b].drawButton(false, current_menu->list->get(b).name);
+  if (current_menu->list->get(b).name != "Back")
+    display_obj.tft.drawXBitmap(0,
+                                KEY_Y + b * (KEY_H + KEY_SPACING_Y) - (ICON_H / 2),
+                                menu_icons[current_menu->list->get(b).icon],
+                                ICON_W,
+                                ICON_H,
+                                TFT_BLACK,
+                                current_menu->list->get(b).color);
+}
 
 // Function to check menu input
 void MenuFunctions::main(uint32_t currentTime)
@@ -274,6 +299,8 @@ void MenuFunctions::main(uint32_t currentTime)
     this->orientDisplay();
     //changeMenu(current_menu);
   }
+
+  // We are at menu
   if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_OFF) ||
       (wifi_scan_obj.currentScanMode == OTA_UPDATE) ||
       (wifi_scan_obj.currentScanMode == SHOW_INFO)) {
@@ -365,6 +392,45 @@ void MenuFunctions::main(uint32_t currentTime)
     return;
   }
 
+  if (pressed)
+    Serial.println("X: " + (String)t_x);
+
+  //Let's check keyboard
+  
+  if (keyboard_obj.KEY) {
+    if (keyboard_obj.KEY == 0x18) {
+      Serial.println("\nUP");
+      if (current_menu->selected > 0) {
+        current_menu->selected--;
+        this->buttonSelected(current_menu->selected);
+        this->buttonNotSelected(current_menu->selected + 1);
+        Serial.println("Current menu index: " + (String)current_menu->selected);
+      }
+    }
+    else if (keyboard_obj.KEY == 0x19) {
+      Serial.println("\nDOWN");
+      if (current_menu->selected < current_menu->list->size() - 1) {
+        current_menu->selected++;
+        this->buttonSelected(current_menu->selected);
+        this->buttonNotSelected(current_menu->selected - 1);
+        Serial.println("Current menu index: " + (String)current_menu->selected);
+      }
+    }
+    else if (keyboard_obj.KEY == 0x1A) {
+      Serial.println("\nRIGHT");
+    }
+    else if (keyboard_obj.KEY == 0x1B) {
+      Serial.println("\nLEFT");
+    }
+    else if (keyboard_obj.KEY == 0x05) {
+      Serial.println("\nCENTER");
+      current_menu->list->get(current_menu->selected).callable();
+    }
+      
+    else
+      Serial.print(keyboard_obj.KEY);         // print the character
+  }
+
   // Check if any key coordinate boxes contain the touch coordinates
   // This is for when on a menu
   if ((wifi_scan_obj.currentScanMode != WIFI_ATTACK_BEACON_SPAM) &&
@@ -383,9 +449,14 @@ void MenuFunctions::main(uint32_t currentTime)
     // Check if any key has changed state
     for (uint8_t b = 0; b < current_menu->list->size(); b++) {
       display_obj.tft.setFreeFont(MENU_FONT);
+
+      // Change button color if pressed
       if (display_obj.key[b].justPressed()) {
         //display_obj.key[b].drawButton2(current_menu->list->get(b).name, true);  // draw invert
         //display_obj.key[b].drawButton(ML_DATUM, BUTTON_PADDING, current_menu->list->get(b).name, true);
+
+        this->buttonSelected(b);
+        /*
         display_obj.key[b].drawButton(true, current_menu->list->get(b).name);
         if (current_menu->list->get(b).name != "Back")
           display_obj.tft.drawXBitmap(0,
@@ -395,6 +466,7 @@ void MenuFunctions::main(uint32_t currentTime)
                                       ICON_H,
                                       current_menu->list->get(b).color,
                                       TFT_BLACK);
+        */
       }
       //else if (pressed)
       //  display_obj.key[b].drawButton(false, current_menu->list->get(b).name);
@@ -409,6 +481,10 @@ void MenuFunctions::main(uint32_t currentTime)
       }
       // This
       else if ((display_obj.key[b].justReleased()) && (pressed)) {
+
+        // Button was selected but dragged off
+        this->buttonNotSelected(b);
+        /*
         display_obj.key[b].drawButton(false, current_menu->list->get(b).name);
         if (current_menu->list->get(b).name != "Back")
           display_obj.tft.drawXBitmap(0,
@@ -418,6 +494,7 @@ void MenuFunctions::main(uint32_t currentTime)
                                       ICON_H,
                                       TFT_BLACK,
                                       current_menu->list->get(b).color);
+        */
       }
 
       display_obj.tft.setFreeFont(NULL);
@@ -676,6 +753,7 @@ void MenuFunctions::orientDisplay()
 // Function to build the menus
 void MenuFunctions::RunSetup()
 {
+  
   this->initLVGL();
   
   // root menu stuff
@@ -1016,10 +1094,13 @@ void MenuFunctions::RunSetup()
     changeMenu(infoMenu.parentMenu);
   });
 
+  
+
   // Set the current menu to the mainMenu
   changeMenu(&mainMenu);
 
   this->initTime = millis();
+  
 }
 
 // Function to change menu
@@ -1112,19 +1193,24 @@ void MenuFunctions::displayCurrentMenu()
     display_obj.tft.setFreeFont(MENU_FONT);
     for (uint8_t i = 0; i < current_menu->list->size(); i++)
     {
-      //display_obj.key[i].drawButton2(current_menu->list->get(i).name);
-      //display_obj.key[i].drawButton(ML_DATUM, BUTTON_PADDING, current_menu->list->get(i).name);
-      //display_obj.key[i].drawButton(true);
-      display_obj.key[i].drawButton(false, current_menu->list->get(i).name);
-
-      if (current_menu->list->get(i).name != "Back")
-        display_obj.tft.drawXBitmap(0,
-                                    KEY_Y + i * (KEY_H + KEY_SPACING_Y) - (ICON_H / 2),
-                                    menu_icons[current_menu->list->get(i).icon],
-                                    ICON_W,
-                                    ICON_H,
-                                    TFT_BLACK,
-                                    current_menu->list->get(i).color);
+      if (current_menu->selected != i) {
+        //display_obj.key[i].drawButton2(current_menu->list->get(i).name);
+        //display_obj.key[i].drawButton(ML_DATUM, BUTTON_PADDING, current_menu->list->get(i).name);
+        //display_obj.key[i].drawButton(true);
+        display_obj.key[i].drawButton(false, current_menu->list->get(i).name);
+  
+        if (current_menu->list->get(i).name != "Back")
+          display_obj.tft.drawXBitmap(0,
+                                      KEY_Y + i * (KEY_H + KEY_SPACING_Y) - (ICON_H / 2),
+                                      menu_icons[current_menu->list->get(i).icon],
+                                      ICON_W,
+                                      ICON_H,
+                                      TFT_BLACK,
+                                      current_menu->list->get(i).color);
+      }
+      else {
+        this->buttonSelected(i);
+      }
     }
     display_obj.tft.setFreeFont(NULL);
   }

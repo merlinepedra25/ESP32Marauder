@@ -9,7 +9,8 @@
 extern Buffer buffer_obj;
 extern Display display_obj;
 
-#define SD_CS 12
+#define SD_CS 4
+#define SD_DET 25
 
 class SDInterface {
 

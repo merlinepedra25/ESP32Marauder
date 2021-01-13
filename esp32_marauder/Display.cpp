@@ -48,6 +48,16 @@ void Display::RunSetup()
   Serial.println("SPI_READ_FREQUENCY: " + (String)SPI_READ_FREQUENCY);
   Serial.println("SPI_TOUCH_FREQUENCY: " + (String)SPI_TOUCH_FREQUENCY);
 
+  Serial.println("TFT_MISO: " + (String)TFT_MISO);
+  Serial.println("TFT_MOSI: " + (String)TFT_MOSI);
+  Serial.println("TFT_SCLK: " + (String)TFT_SCLK);
+  Serial.println("  TFT_CS: " + (String)TFT_CS);
+  Serial.println("  TFT_DC: " + (String)TFT_DC);
+  Serial.println(" TFT_RST: " + (String)TFT_RST);
+  Serial.println("  TFT_BL: " + (String)TFT_BL);
+  Serial.println("TOUCH_CS: " + (String)TOUCH_CS);
+  Serial.println("   SD_CS: " + (String)SD_CS);
+
   
   // Initialize file system
   // This should probably have its own class
